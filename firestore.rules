@@ -53,5 +53,11 @@ service cloud.firestore {
       allow read: if isVorstand();
       allow create, update, delete: if isVorstand();
     }
+
+    // Sitzungen & Tagesordnungen – nur Vorstand
+    match /sitzungen/{sitzungId} {
+      allow read: if isVorstand();
+      allow create, update, delete: if isVorstand();
+    }
   }
 }
