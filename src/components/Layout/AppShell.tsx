@@ -12,6 +12,8 @@ import {
   Key,
   Building2,
   ExternalLink,
+  Globe,
+  HardDrive,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
@@ -25,9 +27,11 @@ const navItems = [
 ]
 
 const externalApps = [
-  { label: 'Schlüsselliste', url: 'https://pschinnerl.github.io/schlusselapp/', icon: Key },
+  { label: 'HTV Homepage', url: 'https://www.helmstedtertv.de', icon: Globe },
+  { label: 'Google Drive', url: 'https://drive.google.com', icon: HardDrive },
+  { label: 'SchlÃ¼sselliste', url: 'https://pschinnerl.github.io/schlusselapp/', icon: Key },
   { label: 'Anlagen', url: 'https://pschinnerl.github.io/htv-anlagen/', icon: Building2 },
-  { label: 'Verträge', url: 'https://pschinnerl.github.io/htv-vertraege/', icon: FileText },
+  { label: 'VertrÃ¤ge', url: 'https://pschinnerl.github.io/htv-vertraege/', icon: FileText },
 ]
 
 export default function AppShell() {
@@ -50,7 +54,7 @@ export default function AppShell() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
             <img
-              src="/Logo2025klein.jpeg"
+              src={`${import.meta.env.BASE_URL}Logo2025klein.jpeg`}
               alt="HTV Logo"
               className="w-9 h-9 object-contain"
             />
@@ -167,7 +171,7 @@ export default function AppShell() {
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
           <div className="w-7 h-7 rounded bg-white flex items-center justify-center overflow-hidden">
-            <img src="/Logo2025klein.jpeg" alt="HTV" className="w-6 h-6 object-contain" />
+            <img src={`${import.meta.env.BASE_URL}Logo2025klein.jpeg`} alt="HTV" className="w-6 h-6 object-contain" />
           </div>
           <span className="text-white font-semibold text-sm">Vorstands-App</span>
         </header>
