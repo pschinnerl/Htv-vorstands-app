@@ -8,6 +8,7 @@ import TodosPage from './pages/TodosPage'
 import KalenderPage from './pages/KalenderPage'
 import AdminPage from './pages/AdminPage'
 import ProfilPage from './pages/ProfilPage'
+import SitzungPage from './pages/SitzungPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="chat" element={<ChatPage />} />
         <Route path="todos" element={<TodosPage />} />
         <Route path="kalender" element={<KalenderPage />} />
+        <Route path="sitzungen" element={<SitzungPage />} />
         <Route path="admin" element={<AdminPage />} />
         <Route path="profil" element={<ProfilPage />} />
       </Route>
