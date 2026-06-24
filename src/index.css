@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* HTV Vereinsblau */
+:root {
+  --htv-blue: #1a3a6b;
+  --htv-blue-light: #2a5298;
+  --htv-blue-dark: #0f2347;
+  --htv-accent: #e8b400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}

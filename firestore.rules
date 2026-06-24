@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Hilfsfunktionen
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function isVorstand() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'vorstand'];
+    }
+    function isGast() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'gast';
+    }
+
+    // Nutzerprofile
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+      allow update: if request.auth.uid == uid; // eigenes Profil editieren
+    }
+
+    // Channels
+    match /channels/{channelId} {
+      allow read: if isSignedIn() &&
+        (isVorstand() || resource.data.type == 'vorstand_gaeste');
+      allow create, update, delete: if isVorstand();
+
+      // Nachrichten – Vorstand + Gäste dürfen schreiben
+      match /messages/{msgId} {
+        allow read: if isSignedIn() &&
+          (isVorstand() || get(/databases/$(database)/documents/channels/$(channelId)).data.type == 'vorstand_gaeste');
+        allow create: if isSignedIn(); // Vorstand und Gäste dürfen schreiben
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ToDos – nur Vorstand
+    match /todos/{todoId} {
+      allow read: if isVorstand();
+      allow create, update: if isVorstand();
+      allow delete: if isVorstand();
+    }
+
+    // Kalender – nur Vorstand
+    match /events/{eventId} {
+      allow read: if isVorstand();
+      allow create, update, delete: if isVorstand();
+    }
+  }
+}
