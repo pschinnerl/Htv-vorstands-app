@@ -18,20 +18,20 @@ import { ExternalLink, SmilePlus } from 'lucide-react'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
 
-const QUICK_EMOJIS = ['ð', 'â¤ï¸', 'ð', 'ð', 'ð', 'â']
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '🎉', '👏', '✅']
 
 function getDriveIcon(url: string): string {
   try {
     const u = new URL(url)
     if (u.hostname.includes('docs.google.com')) {
-      if (u.pathname.includes('/document/')) return 'ð'
-      if (u.pathname.includes('/spreadsheets/')) return 'ð'
-      if (u.pathname.includes('/presentation/')) return 'ð'
+      if (u.pathname.includes('/document/')) return '📝'
+      if (u.pathname.includes('/spreadsheets/')) return '📊'
+      if (u.pathname.includes('/presentation/')) return '📑'
     }
-    if (u.hostname.includes('drive.google.com')) return 'ð'
-    if (u.hostname.includes('dropbox.com')) return 'ð¦'
+    if (u.hostname.includes('drive.google.com')) return '📁'
+    if (u.hostname.includes('dropbox.com')) return '📦'
   } catch { /* noop */ }
-  return 'ð'
+  return '🔗'
 }
 
 interface Props {
@@ -70,7 +70,7 @@ export default function MessageList({ channelId }: Props) {
     if (!channelId || messages.length === 0) return
     const timer = setTimeout(() => markAsRead(channelId), 500)
     return () => clearTimeout(timer)
-  }, [messages.length, channelId])
+  }, [messages.length, channelId, markAsRead])
 
   async function toggleReaction(msg: Message, emoji: string) {
     if (!currentUser) return
@@ -147,7 +147,7 @@ export default function MessageList({ channelId }: Props) {
                     <div className="min-w-0">
                       <div className="font-medium truncate text-xs">{msg.fileName}</div>
                       <div className={`text-xs truncate mt-0.5 ${isOwn ? 'text-white/60' : 'text-slate-400'}`}>
-                        {msg.fileUrl.length > 40 ? msg.fileUrl.slice(0, 40) + 'â¦' : msg.fileUrl}
+                        {msg.fileUrl.length > 40 ? msg.fileUrl.slice(0, 40) + '…' : msg.fileUrl}
                       </div>
                     </div>
                     <ExternalLink size={13} className={`flex-shrink-0 ${isOwn ? 'text-white/60' : 'text-slate-400'}`} />
@@ -168,17 +168,15 @@ export default function MessageList({ channelId }: Props) {
                       {msg.text}
                     </div>
 
-                    {/* Reaktions-Button (erscheint beim Hover) */}
                     <div className="relative">
                       <button
                         onClick={e => { e.stopPropagation(); setPickerOpen(pickerOpen === msg.id ? null : msg.id) }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-slate-200 text-slate-400"
-                        title="Reaktion hinzufÃ¼gen"
+                        title="Reaktion hinzufügen"
                       >
                         <SmilePlus size={16} />
                       </button>
 
-                      {/* Emoji-Picker */}
                       {pickerOpen === msg.id && (
                         <div
                           className={`absolute bottom-8 z-10 bg-white border border-slate-200 rounded-xl shadow-lg px-2 py-1.5 flex gap-1 ${isOwn ? 'right-0' : 'left-0'}`}
