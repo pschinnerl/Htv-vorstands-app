@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Globe,
   HardDrive,
+  ClipboardList,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
@@ -22,6 +23,7 @@ import { useUnreadTotal } from '../../context/UnreadContext'
 const navItems = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/todos', label: 'Aufgaben', icon: CheckSquare },
+  { to: '/sitzungen', label: 'Sitzungen', icon: ClipboardList },
   { to: '/kalender', label: 'Kalender', icon: Calendar },
   { to: '/admin', label: 'Mitglieder', icon: Users, adminOnly: true },
 ]
@@ -29,9 +31,9 @@ const navItems = [
 const externalApps = [
   { label: 'HTV Homepage', url: 'https://www.helmstedtertv.de', icon: Globe },
   { label: 'Google Drive', url: 'https://drive.google.com', icon: HardDrive },
-  { label: 'SchlÃ¼sselliste', url: 'https://pschinnerl.github.io/schlusselapp/', icon: Key },
+  { label: 'Schlüsselliste', url: 'https://pschinnerl.github.io/schlusselapp/', icon: Key },
   { label: 'Anlagen', url: 'https://pschinnerl.github.io/htv-anlagen/', icon: Building2 },
-  { label: 'VertrÃ¤ge', url: 'https://pschinnerl.github.io/htv-vertraege/', icon: FileText },
+  { label: 'Verträge', url: 'https://pschinnerl.github.io/htv-vertraege/', icon: FileText },
 ]
 
 export default function AppShell() {
