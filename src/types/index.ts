@@ -59,9 +59,27 @@ export type RecurrenceFreq = 'none' | 'daily' | 'weekly' | 'monthly_date' | 'mon
 export interface RecurrenceRule {
   freq: RecurrenceFreq
   interval: number          // z.B. 2 = jeden 2. Dienstag
-  weekday?: number          // 0=Mo â¦ 6=So (fÃ¼r weekly + monthly_weekday)
-  weekdayOrdinal?: number   // 1=erster, 2=zweiter, -1=letzter (fÃ¼r monthly_weekday)
+  weekday?: number          // 0=Mo ... 6=So (für weekly + monthly_weekday)
+  weekdayOrdinal?: number   // 1=erster, 2=zweiter, -1=letzter (für monthly_weekday)
   until?: string            // ISO-Datum bis wann (optional)
+}
+
+export interface Tagesordnungspunkt {
+  id: string
+  nr: string
+  bezeichnung: string
+  zustaendig: string
+  unterlagen: string
+}
+
+export interface Sitzung {
+  id: string
+  jahr: number
+  datum: string          // "YYYY-MM-DD"
+  status: 'offen' | 'abgeschlossen'
+  tagesordnung: Tagesordnungspunkt[]
+  createdBy: string
+  createdAt: Date
 }
 
 export interface CalendarEvent {
