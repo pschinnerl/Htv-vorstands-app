@@ -17,7 +17,17 @@ import { initializeApp, deleteApp } from 'firebase/app'
 import { db, auth } from '../firebase/config'
 import { useAuth } from '../context/AuthContext'
 import type { AppUser, UserRole } from '../types'
-import { Trash2, Shield, User, UserPlus, X, Mail, RefreshCw } from 'lucide-react'
+import { Trash2, Shield, User, UserPlus, X, Mail, RefreshCw, Lock } from 'lucide-react'
+
+// Firebase-Config der Vertrags-App (separates Projekt)
+const VERTRAEGE_CONFIG = {
+  apiKey: "AIzaSyCBo69NFyloUpl3-1c5MdykBLfUF9BT8ho",
+  authDomain: "htv-vertraege.firebaseapp.com",
+  projectId: "htv-vertraege",
+  storageBucket: "htv-vertraege.firebasestorage.app",
+  messagingSenderId: "244031347624",
+  appId: "1:244031347624:web:90e64aa53efbc37b271b9d",
+}
 
 const ACTION_CODE_SETTINGS = {
   url: 'https://helmstedtertv.github.io/Htv-vorstands-app/',
@@ -49,6 +59,11 @@ export default function AdminPage() {
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteError, setInviteError] = useState('')
   const [resendingUid, setResendingUid] = useState<string | null>(null)
+
+  // Vertragsmanagement Passwort-Reset
+  const [vertraegeResetEmail, setVertraegeResetEmail] = useState('vorstand.htv@gmail.com')
+  const [vertraegeResetLoading, setVertraegeResetLoading] = useState(false)
+  const [vertraegeResetMsg, setVertraegeResetMsg] = useState('')
 
   const isAdmin = userProfile?.role === 'admin'
 
@@ -105,6 +120,22 @@ export default function AdminPage() {
     } finally {
       await deleteApp(secondaryApp)
       setInviteLoading(false)
+    }
+  }
+
+  async function sendVertraegePasswordReset() {
+    setVertraegeResetLoading(true)
+    setVertraegeResetMsg('')
+    const secondaryApp = initializeApp(VERTRAEGE_CONFIG, 'vertraege-reset-' + Date.now())
+    const secondaryAuth = initializeAuth(secondaryApp)
+    try {
+      await sendPasswordResetEmail(secondaryAuth, vertraegeResetEmail.trim())
+      setVertraegeResetMsg(`✓ Reset-E-Mail gesendet an ${vertraegeResetEmail}`)
+    } catch (err: unknown) {
+      setVertraegeResetMsg('Fehler: ' + (err instanceof Error ? err.message : 'Unbekannt'))
+    } finally {
+      await deleteApp(secondaryApp)
+      setVertraegeResetLoading(false)
     }
   }
 
@@ -308,6 +339,41 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+
+        {/* Vertragsmanagement-Zugang */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 mt-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Lock size={16} className="text-slate-500" />
+            <h2 className="font-medium text-slate-800 text-sm">Zugang Vertragsmanagement</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-4">
+            Passwort-Reset-E-Mail für den Zugang zur Vertrags-App verschicken.
+            Der Empfänger kann damit ein neues Passwort setzen.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={vertraegeResetEmail}
+              onChange={e => setVertraegeResetEmail(e.target.value)}
+              className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+            />
+            <button
+              onClick={sendVertraegePasswordReset}
+              disabled={vertraegeResetLoading}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40 flex-shrink-0"
+              style={{ backgroundColor: 'var(--htv-blue)' }}
+            >
+              <Mail size={14} />
+              {vertraegeResetLoading ? 'Senden…' : 'Reset senden'}
+            </button>
+          </div>
+          {vertraegeResetMsg && (
+            <p className={`text-xs mt-2 ${vertraegeResetMsg.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
+              {vertraegeResetMsg}
+            </p>
+          )}
+        </div>
+
       </div>
     </div>
   )
