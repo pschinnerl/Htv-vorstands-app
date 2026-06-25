@@ -2,14 +2,28 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/Htv-vorstands-app/favicon.svg" />
+    <link rel="manifest" href="/Htv-vorstands-app/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1a3a6b" />
     <meta name="description" content="Vorstands-App – Helmstedter Tennis-Verein e.V." />
     <title>HTV Vorstands-App</title>
-    <script type="module" crossorigin src="/assets/index-CqKtovLj.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BVU1TN8z.css">
+    <!-- GitHub Pages SPA: 404.html leitet hierher weiter, wir stellen die URL wieder her -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&');
+          });
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded[0] +
+            (decoded[1] || '') + l.hash
+          );
+        }
+      }(window.location));
+    </script>
+    <script type="module" crossorigin src="/Htv-vorstands-app/assets/index-BRcjMW2R.js"></script>
+    <link rel="stylesheet" crossorigin href="/Htv-vorstands-app/assets/index-CxWZU9Og.css">
   </head>
   <body>
     <div id="root"></div>

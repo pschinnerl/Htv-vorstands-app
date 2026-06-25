@@ -14,10 +14,15 @@ import {
   initializeAuth,
 } from 'firebase/auth'
 import { initializeApp, deleteApp } from 'firebase/app'
-import { db } from '../firebase/config'
+import { db, auth } from '../firebase/config'
 import { useAuth } from '../context/AuthContext'
 import type { AppUser, UserRole } from '../types'
-import { Trash2, Shield, User, UserPlus, X, Mail } from 'lucide-react'
+import { Trash2, Shield, User, UserPlus, X, Mail, RefreshCw } from 'lucide-react'
+
+const ACTION_CODE_SETTINGS = {
+  url: 'https://helmstedtertv.github.io/Htv-vorstands-app/',
+  handleCodeInApp: false,
+}
 
 const roleLabels: Record<UserRole, string> = {
   admin: 'Admin',
@@ -43,6 +48,7 @@ export default function AdminPage() {
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteError, setInviteError] = useState('')
+  const [resendingUid, setResendingUid] = useState<string | null>(null)
 
   const isAdmin = userProfile?.role === 'admin'
 
@@ -83,7 +89,7 @@ export default function AdminPage() {
       })
 
       // Passwort-Reset-Mail senden → Nutzer setzt sein eigenes Passwort
-      await sendPasswordResetEmail(secondaryAuth, inviteEmail.trim())
+      await sendPasswordResetEmail(secondaryAuth, inviteEmail.trim(), ACTION_CODE_SETTINGS)
 
       setInviteSuccess(`Einladung an ${inviteEmail} gesendet! ${inviteName} erhält eine E-Mail zum Passwort setzen.`)
       setInviteName('')
@@ -99,6 +105,18 @@ export default function AdminPage() {
     } finally {
       await deleteApp(secondaryApp)
       setInviteLoading(false)
+    }
+  }
+
+  async function resendInvite(uid: string, email: string) {
+    setResendingUid(uid)
+    try {
+      await sendPasswordResetEmail(auth, email, ACTION_CODE_SETTINGS)
+      alert(`Einladung erneut gesendet an ${email}`)
+    } catch (err: unknown) {
+      alert('Fehler: ' + (err instanceof Error ? err.message : 'Unbekannt'))
+    } finally {
+      setResendingUid(null)
     }
   }
 
@@ -267,15 +285,25 @@ export default function AdminPage() {
                 <span className="text-xs text-slate-300 flex-shrink-0">Du</span>
               )}
 
-              {/* Entfernen */}
+              {/* Einladung erneut senden + Entfernen */}
               {user.uid !== userProfile?.uid && (
-                <button
-                  onClick={() => removeUser(user.uid, user.displayName)}
-                  className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0"
-                  title="Aus App entfernen"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <>
+                  <button
+                    onClick={() => resendInvite(user.uid, user.email)}
+                    disabled={resendingUid === user.uid}
+                    className="text-slate-300 hover:text-blue-400 transition-colors flex-shrink-0 disabled:opacity-40"
+                    title="Einladung erneut senden"
+                  >
+                    <RefreshCw size={15} className={resendingUid === user.uid ? 'animate-spin' : ''} />
+                  </button>
+                  <button
+                    onClick={() => removeUser(user.uid, user.displayName)}
+                    className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0"
+                    title="Aus App entfernen"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </>
               )}
             </div>
           ))}
