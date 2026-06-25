@@ -37,6 +37,9 @@ service cloud.firestore {
         allow read: if isSignedIn() &&
           (isVorstand() || get(/databases/$(database)/documents/channels/$(channelId)).data.type == 'vorstand_gaeste');
         allow create: if isSignedIn(); // Vorstand und Gäste dürfen schreiben
+        // Reaktionen hinzufügen/entfernen – nur das 'reactions'-Feld darf geändert werden
+        allow update: if isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
         allow delete: if isAdmin();
       }
     }

@@ -12,9 +12,11 @@ import { Hash, Plus, X, MoreHorizontal, Pencil, Trash2, Check } from 'lucide-rea
 interface Props {
   selectedId: string | null
   onSelect: (id: string | null) => void
+  /** Auf Mobile die volle Breite nutzen statt w-52 */
+  fullWidth?: boolean
 }
 
-export default function ChannelSidebar({ selectedId, onSelect }: Props) {
+export default function ChannelSidebar({ selectedId, onSelect, fullWidth }: Props) {
   const { currentUser, userProfile } = useAuth()
   const { channels, counts, markAsRead } = useChatContext()
 
@@ -84,7 +86,7 @@ export default function ChannelSidebar({ selectedId, onSelect }: Props) {
   }
 
   return (
-    <div className="w-52 flex-shrink-0 bg-slate-800 flex flex-col h-full">
+    <div className={`${fullWidth ? 'w-full' : 'w-52'} flex-shrink-0 bg-slate-800 flex flex-col h-full`}>
       <div className="px-3 py-3 flex items-center justify-between border-b border-slate-700">
         <span className="text-white font-medium text-sm">Channels</span>
         {!isGast && (

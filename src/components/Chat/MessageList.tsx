@@ -82,7 +82,7 @@ export default function MessageList({ channelId }: Props) {
     await updateDoc(msgRef, {
       [`reactions.${emoji}`]: hasReacted ? arrayRemove(uid) : arrayUnion(uid),
     })
-    setPickerOpen(null)
+    // Picker offen lassen → Nutzer kann mehrere Reaktionen setzen / entfernen
   }
 
   function formatTime(date: Date) {
@@ -168,15 +168,19 @@ export default function MessageList({ channelId }: Props) {
                       {msg.text}
                     </div>
 
+                    {/* Reaktions-Button: auf Desktop bei Hover, auf Touch immer sichtbar */}
                     <div className="relative">
                       <button
                         onClick={e => { e.stopPropagation(); setPickerOpen(pickerOpen === msg.id ? null : msg.id) }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-slate-200 text-slate-400"
+                        className="transition-opacity p-1 rounded-full hover:bg-slate-200 active:bg-slate-200 text-slate-400
+                          opacity-0 group-hover:opacity-100
+                          [@media(hover:none)]:opacity-60"
                         title="Reaktion hinzufügen"
                       >
                         <SmilePlus size={16} />
                       </button>
 
+                      {/* Emoji-Picker */}
                       {pickerOpen === msg.id && (
                         <div
                           className={`absolute bottom-8 z-10 bg-white border border-slate-200 rounded-xl shadow-lg px-2 py-1.5 flex gap-1 ${isOwn ? 'right-0' : 'left-0'}`}

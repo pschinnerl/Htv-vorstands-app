@@ -70,11 +70,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         }
         // Nur updaten wenn sich wirklich etwas geändert hat (verhindert unnötige Re-Renders)
+        // Nur neuere Timestamps übernehmen – verhindert, dass ein Firestore-Snapshot
+        // das optimistische Update (markAsRead) zurücksetzt, bevor der Write bestätigt ist.
         setLastReadMap(prev => {
-          const same =
-            Object.keys(mapped).length === Object.keys(prev).length &&
-            Object.entries(mapped).every(([k, v]) => prev[k]?.getTime() === v.getTime())
-          return same ? prev : mapped
+          const merged: Record<string, Date> = { ...prev }
+          let changed = false
+          for (const [id, date] of Object.entries(mapped)) {
+            const prevDate = prev[id]
+            if (!prevDate || date.getTime() > prevDate.getTime()) {
+              merged[id] = date
+              changed = true
+            }
+          }
+          return changed ? merged : prev
         })
       },
       // Fehler-Handler: bei Firestore-Regelverstoß nie einfrieren
