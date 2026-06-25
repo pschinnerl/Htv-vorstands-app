@@ -15,6 +15,7 @@ import {
   Globe,
   HardDrive,
   ClipboardList,
+  BookOpen,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/todos', label: 'Aufgaben', icon: CheckSquare },
   { to: '/sitzungen', label: 'Sitzungen', icon: ClipboardList },
+  { to: '/protokolle', label: 'Protokolle', icon: BookOpen },
   { to: '/kalender', label: 'Kalender', icon: Calendar },
   { to: '/admin', label: 'Mitglieder', icon: Users, adminOnly: true },
 ]
@@ -31,9 +33,9 @@ const navItems = [
 const externalApps = [
   { label: 'HTV Homepage', url: 'https://www.helmstedtertv.de', icon: Globe },
   { label: 'Google Drive', url: 'https://drive.google.com', icon: HardDrive },
-  { label: 'Schlüsselliste', url: 'https://pschinnerl.github.io/schlusselapp/', icon: Key },
-  { label: 'Anlagen', url: 'https://pschinnerl.github.io/htv-anlagen/', icon: Building2 },
-  { label: 'Verträge', url: 'https://pschinnerl.github.io/htv-vertraege/', icon: FileText },
+  { label: 'Schl\u00fcsselliste', url: 'https://helmstedtertv.github.io/schlusselapp/', icon: Key },
+  { label: 'Anlagen', url: 'https://helmstedtertv.github.io/htv-anlagen/', icon: Building2 },
+  { label: 'Vertr\u00e4ge', url: 'https://helmstedtertv.github.io/htv-vertraege/', icon: FileText },
 ]
 
 export default function AppShell() {

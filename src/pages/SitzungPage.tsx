@@ -23,6 +23,7 @@ export default function SitzungPage() {
   const [newDatum, setNewDatum] = useState('')
   const [editingTO, setEditingTO] = useState<Tagesordnungspunkt[] | null>(null)
   const [saving, setSaving] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   const isGast = userProfile?.role === 'gast'
 
@@ -38,6 +39,8 @@ export default function SitzungPage() {
           tagesordnung: (d.data().tagesordnung ?? []) as Tagesordnungspunkt[],
         } as Sitzung))
       )
+    }, err => {
+      console.error('Sitzungen-Listener Fehler:', err.message)
     })
   }, [])
 
@@ -58,6 +61,7 @@ export default function SitzungPage() {
   async function createSitzung() {
     if (!newDatum || !currentUser) return
     setSaving(true)
+    setCreateError(null)
     try {
       const ref = await addDoc(collection(db, 'sitzungen'), {
         datum: newDatum,
@@ -71,6 +75,9 @@ export default function SitzungPage() {
       setSelectedJahr(parseInt(newDatum.split('-')[0]))
       setShowNewForm(false)
       setNewDatum('')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setCreateError(msg)
     } finally {
       setSaving(false)
     }
@@ -109,8 +116,9 @@ export default function SitzungPage() {
 
   return (
     <div className="h-full flex overflow-hidden">
-      {/* Linke Sidebar */}
+      {/* ── Linke Sidebar: Jahres- und Sitzungsliste ── */}
       <aside className="w-48 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col">
+        {/* Jahresauswahl */}
         <div className="px-3 pt-4 pb-2 border-b border-slate-100">
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Jahr
@@ -136,6 +144,7 @@ export default function SitzungPage() {
           </div>
         </div>
 
+        {/* Sitzungsliste des gewählten Jahres */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
           {sitzungenImJahr.length === 0 && (
             <div className="text-xs text-slate-400 px-2 py-6 text-center">
@@ -163,6 +172,7 @@ export default function SitzungPage() {
           ))}
         </div>
 
+        {/* Neue Sitzung */}
         {!isGast && (
           <div className="px-2 py-2 border-t border-slate-100">
             <button
@@ -177,8 +187,9 @@ export default function SitzungPage() {
         )}
       </aside>
 
-      {/* Hauptbereich */}
+      {/* ── Hauptbereich ── */}
       <div className="flex-1 overflow-y-auto bg-slate-50">
+        {/* Formular: Neue Sitzung */}
         {showNewForm && (
           <div className="m-4 bg-white rounded-xl border border-slate-200 p-4 max-w-sm">
             <h2 className="font-medium text-slate-800 mb-3">Neue Sitzung anlegen</h2>
@@ -190,9 +201,14 @@ export default function SitzungPage() {
               autoFocus
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent mb-3"
             />
+            {createError && (
+              <div className="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                Fehler: {createError}
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
               <button
-                onClick={() => { setShowNewForm(false); setNewDatum('') }}
+                onClick={() => { setShowNewForm(false); setNewDatum(''); setCreateError(null) }}
                 className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700"
               >
                 Abbrechen
@@ -203,17 +219,21 @@ export default function SitzungPage() {
                 className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40"
                 style={{ backgroundColor: 'var(--htv-blue)' }}
               >
-                Erstellen
+                {saving ? 'Speichern…' : 'Erstellen'}
               </button>
             </div>
           </div>
         )}
 
+        {/* Ausgewählte Sitzung */}
         {selected ? (
           <div className="p-4 max-w-4xl">
+            {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <div>
-                <div className="text-xs text-slate-400 mb-0.5">Sitzung {selected.jahr}</div>
+                <div className="text-xs text-slate-400 mb-0.5">
+                  Sitzung {selected.jahr}
+                </div>
                 <h1 className="text-xl font-semibold text-slate-800">
                   Sitzung am{' '}
                   {format(parseISO(selected.datum), 'dd. MMMM yyyy', { locale: de })}
@@ -224,6 +244,7 @@ export default function SitzungPage() {
                   </span>
                 )}
               </div>
+
               {!isGast && selected.status === 'offen' && (
                 <div className="flex gap-2">
                   <button
@@ -244,6 +265,7 @@ export default function SitzungPage() {
               )}
             </div>
 
+            {/* Tagesordnung-Karte */}
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -267,6 +289,7 @@ export default function SitzungPage() {
                 )}
               </div>
 
+              {/* ── Bearbeitungsmodus ── */}
               {editingTO ? (
                 <div className="p-4">
                   <div className="overflow-x-auto">
@@ -284,19 +307,44 @@ export default function SitzungPage() {
                         {editingTO.map((tp, i) => (
                           <tr key={tp.id}>
                             <td className="pr-2 pb-2">
-                              <input value={tp.nr} onChange={e => updatePunkt(i, 'nr', e.target.value)} className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1" placeholder="1" />
+                              <input
+                                value={tp.nr}
+                                onChange={e => updatePunkt(i, 'nr', e.target.value)}
+                                className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1"
+                                placeholder="1"
+                              />
                             </td>
                             <td className="pr-2 pb-2">
-                              <input value={tp.bezeichnung} onChange={e => updatePunkt(i, 'bezeichnung', e.target.value)} className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1" placeholder="Bezeichnung" />
+                              <input
+                                value={tp.bezeichnung}
+                                onChange={e => updatePunkt(i, 'bezeichnung', e.target.value)}
+                                className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1"
+                                placeholder="Bezeichnung"
+                              />
                             </td>
                             <td className="pr-2 pb-2">
-                              <input value={tp.zustaendig} onChange={e => updatePunkt(i, 'zustaendig', e.target.value)} className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1" placeholder="Name" />
+                              <input
+                                value={tp.zustaendig}
+                                onChange={e => updatePunkt(i, 'zustaendig', e.target.value)}
+                                className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1"
+                                placeholder="Name"
+                              />
                             </td>
                             <td className="pr-2 pb-2">
-                              <input value={tp.unterlagen} onChange={e => updatePunkt(i, 'unterlagen', e.target.value)} className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1" placeholder="Link oder Dateiname" />
+                              <input
+                                value={tp.unterlagen}
+                                onChange={e => updatePunkt(i, 'unterlagen', e.target.value)}
+                                className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1"
+                                placeholder="Link oder Dateiname"
+                              />
                             </td>
                             <td className="pb-2">
-                              <button onClick={() => setEditingTO(prev => prev!.filter((_, j) => j !== i))} className="text-slate-300 hover:text-red-400 transition-colors">
+                              <button
+                                onClick={() =>
+                                  setEditingTO(prev => prev!.filter((_, j) => j !== i))
+                                }
+                                className="text-slate-300 hover:text-red-400 transition-colors"
+                              >
                                 <Trash2 size={14} />
                               </button>
                             </td>
@@ -305,26 +353,46 @@ export default function SitzungPage() {
                       </tbody>
                     </table>
                   </div>
-                  <button onClick={() => setEditingTO(prev => [...prev!, neuenPunkt()])} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mt-2 transition-colors">
+
+                  <button
+                    onClick={() => setEditingTO(prev => [...prev!, neuenPunkt()])}
+                    className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mt-2 transition-colors"
+                  >
                     <PlusCircle size={15} />
                     Punkt hinzufügen
                   </button>
+
                   <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
-                    <button onClick={() => setEditingTO(null)} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">Abbrechen</button>
-                    <button onClick={() => saveTagesordnung(selected.id, editingTO)} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40" style={{ backgroundColor: 'var(--htv-blue)' }}>
+                    <button
+                      onClick={() => setEditingTO(null)}
+                      className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700"
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      onClick={() => saveTagesordnung(selected.id, editingTO)}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40"
+                      style={{ backgroundColor: 'var(--htv-blue)' }}
+                    >
                       <Check size={14} />
                       Speichern
                     </button>
                   </div>
                 </div>
               ) : (
+                /* ── Anzeigemodus ── */
                 <>
                   {selected.tagesordnung.length === 0 ? (
                     <div className="px-4 py-10 text-center text-slate-400 text-sm">
                       Noch keine Tagesordnung eingetragen
                       {!isGast && selected.status === 'offen' && (
                         <div className="mt-2">
-                          <button onClick={() => setEditingTO([neuenPunkt()])} className="underline text-sm" style={{ color: 'var(--htv-blue)' }}>
+                          <button
+                            onClick={() => setEditingTO([neuenPunkt()])}
+                            className="underline text-sm"
+                            style={{ color: 'var(--htv-blue)' }}
+                          >
                             Punkte hinzufügen
                           </button>
                         </div>
@@ -343,11 +411,22 @@ export default function SitzungPage() {
                         </thead>
                         <tbody>
                           {selected.tagesordnung.map((tp, i) => (
-                            <tr key={tp.id} className={i < selected.tagesordnung.length - 1 ? 'border-b border-slate-50' : ''}>
-                              <td className="px-4 py-3 text-slate-500 font-medium">{tp.nr}</td>
+                            <tr
+                              key={tp.id}
+                              className={
+                                i < selected.tagesordnung.length - 1
+                                  ? 'border-b border-slate-50'
+                                  : ''
+                              }
+                            >
+                              <td className="px-4 py-3 text-slate-500 font-medium">
+                                {tp.nr}
+                              </td>
                               <td className="px-4 py-3 text-slate-800">{tp.bezeichnung}</td>
                               <td className="px-4 py-3 text-slate-600">{tp.zustaendig}</td>
-                              <td className="px-4 py-3 text-slate-500 text-xs">{tp.unterlagen}</td>
+                              <td className="px-4 py-3 text-slate-500 text-xs">
+                                {tp.unterlagen}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -363,10 +442,16 @@ export default function SitzungPage() {
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
               <ClipboardList size={36} className="opacity-30" />
               <p className="text-sm">
-                {sitzungen.length === 0 ? 'Noch keine Sitzungen vorhanden' : 'Sitzung auswählen'}
+                {sitzungen.length === 0
+                  ? 'Noch keine Sitzungen vorhanden'
+                  : 'Sitzung auswählen'}
               </p>
               {!isGast && sitzungen.length === 0 && (
-                <button onClick={() => setShowNewForm(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium mt-1" style={{ backgroundColor: 'var(--htv-blue)' }}>
+                <button
+                  onClick={() => setShowNewForm(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium mt-1"
+                  style={{ backgroundColor: 'var(--htv-blue)' }}
+                >
                   <Plus size={14} />
                   Erste Sitzung anlegen
                 </button>
