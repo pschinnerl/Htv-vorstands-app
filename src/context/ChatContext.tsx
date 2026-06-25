@@ -38,6 +38,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [channels, setChannels] = useState<Channel[]>([])
   const [msgDocs, setMsgDocs] = useState<Record<string, MsgDoc[]>>({})
   const [lastReadMap, setLastReadMap] = useState<Record<string, Date>>({})
+  // Wird true sobald der erste userActivity-Snapshot aus Firestore kam.
+  // Verhindert false-positive Badges während des Ladens.
+  const [lastReadLoaded, setLastReadLoaded] = useState(false)
 
   // Ref damit markAsRead immer die aktuellen msgDocs sieht ohne die Funktion neu zu erstellen
   const msgDocsRef = useRef<Record<string, MsgDoc[]>>({})
@@ -61,6 +64,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return onSnapshot(
       doc(db, 'userActivity', currentUser.uid),
       snap => {
+        setLastReadLoaded(true)  // Firestore hat geantwortet – ab jetzt Badges berechnen
         const data = snap.data()?.channelLastRead as Record<string, Timestamp> | undefined
         if (!data) return   // kein Dokument oder kein channelLastRead → lastReadMap bleibt {}
         const mapped: Record<string, Date> = {}
@@ -88,6 +92,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Fehler-Handler: bei Firestore-Regelverstoß nie einfrieren
       err => console.warn('userActivity listener error:', err)
     )
+    // Beim Wechsel des Users zurücksetzen
+    return () => setLastReadLoaded(false)
   }, [currentUser])
 
   // Nachrichten pro Channel abonnieren
@@ -107,8 +113,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [currentUser, channels.map(c => c.id).join(',')])
 
   // Counts direkt aus React-State berechnen – kein async, kein Closure-Bug
+  // Solange lastReadLoaded false ist (Firestore noch nicht geantwortet), alles als gelesen zeigen
   const counts: Record<string, number> = {}
   for (const ch of channels) {
+    if (!lastReadLoaded) {
+      counts[ch.id] = 0
+      continue
+    }
     const lastRead = lastReadMap[ch.id]
     const msgs = msgDocs[ch.id] ?? []
     let count = 0
