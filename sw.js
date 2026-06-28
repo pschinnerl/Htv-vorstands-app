@@ -12,6 +12,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('push', event => {
   let title = 'HTV Vorstands-App'
   let body  = 'Neue Nachricht'
+  let count = 1
   const icon = self.location.origin + '/Htv-vorstands-app/icon-192.png'
 
   if (event.data) {
@@ -19,20 +20,25 @@ self.addEventListener('push', event => {
       const data = event.data.json()
       title = data.title || title
       body  = data.body  || body
+      if (data.count) count = data.count
     } catch {
       body = event.data.text() || body
     }
   }
 
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon,
-      badge: icon,
-      tag: 'new-message',
-      renotify: true,
-      vibrate: [100, 50, 100],
-    })
+    Promise.all([
+      self.registration.showNotification(title, {
+        body,
+        icon,
+        badge: icon,
+        tag: 'new-message',
+        renotify: true,
+        vibrate: [100, 50, 100],
+      }),
+      // Icon-Badge auf dem Homescreen setzen (iOS 16.4+ / iPadOS 16.4+)
+      self.registration.setAppBadge?.(count).catch(() => {}),
+    ])
   )
 })
 
@@ -68,6 +74,7 @@ self.addEventListener('message', event => {
 // Klick auf Benachrichtigung → App in den Vordergrund
 self.addEventListener('notificationclick', event => {
   event.notification.close()
+  self.registration.clearAppBadge?.().catch(() => {})
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
