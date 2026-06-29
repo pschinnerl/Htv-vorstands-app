@@ -36,25 +36,37 @@ messaging.onBackgroundMessage(() => {
   // bis setAppBadge fertig ist (sonst wird er oft vorher beendet → kein Badge).
 })
 
-// ── Icon-Badge bei eingehendem Push (zuverlässig via waitUntil) ──────────────
+// ── Eingehender Push: Banner (nur iOS) + Icon-Badge (alle), via waitUntil ─────
 self.addEventListener('push', event => {
-  let count = 1
-  try {
-    const payload = event.data ? event.data.json() : {}
-    const c = payload?.data?.count ?? payload?.count
-    if (c != null) count = Number(c) || 1
-  } catch { /* Payload nicht lesbar – Badge dann pauschal auf 1 */ }
+  let payload = {}
+  try { payload = event.data ? event.data.json() : {} } catch { /* unlesbar */ }
+
+  // iOS-Roh-Web-Push: { title, body, count } an oberster Ebene.
+  // FCM (Android/Mac): { notification, data, ... } – Banner zeigt Firebase.
+  const isRawWebPush =
+    payload && typeof payload.title === 'string' && !payload.notification && !payload.data
+  const count = Number(isRawWebPush ? payload.count : (payload && payload.data && payload.data.count)) || 1
 
   event.waitUntil((async () => {
-    // Diagnose-Beacon: bestätigt im Live-Log, dass der Service Worker beim
-    // Push aufgewacht ist (inkl. Geräte-Kennung über den User-Agent).
+    // Diagnose-Beacon: bestätigt im Live-Log, dass der SW beim Push aufwacht.
     try {
       await fetch('https://htv-push-worker.vorstand-htv.workers.dev/ping', {
         method: 'POST',
         mode: 'no-cors',
-        body: 'sw-push ' + (self.navigator.userAgent || ''),
+        body: 'sw-push raw=' + isRawWebPush + ' ' + (self.navigator.userAgent || ''),
       })
     } catch { /* egal */ }
+
+    // iOS: Banner selbst anzeigen (für Roh-Web-Push gibt es kein FCM-Auto-Banner).
+    if (isRawWebPush) {
+      await self.registration.showNotification(payload.title || 'HTV Vorstands-App', {
+        body: payload.body || 'Neue Nachricht',
+        icon: ICON,
+        badge: ICON,
+        tag: 'new-message',
+        renotify: true,
+      })
+    }
 
     if (self.navigator.setAppBadge) {
       await self.navigator.setAppBadge(count).catch(() => {})
