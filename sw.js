@@ -1,51 +1,51 @@
-// Service Worker – Badge + Web Push Benachrichtigungen
+/* Service Worker – Firebase Cloud Messaging (Hintergrund) + Icon-Badge
+ *
+ * FCM liefert Push-Nachrichten verschlüsselt aus; die Compat-SDK übernimmt
+ * Entschlüsselung und ruft onBackgroundMessage auf. Wir zeigen dort die
+ * Benachrichtigung und setzen das Homescreen-Badge (iOS/iPadOS 16.4+).
+ */
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
+importScripts('https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js')
+importScripts('https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js')
+
+firebase.initializeApp({
+  apiKey: 'AIzaSyDbXzuiyhLSvbchvbE95jIVX0XGxWk3hhE',
+  authDomain: 'htv-vorstands-app.firebaseapp.com',
+  projectId: 'htv-vorstands-app',
+  messagingSenderId: '291659147396',
+  appId: '1:291659147396:web:3b9607bb2dc6b6bdbb7ad1',
 })
 
-self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim())
+const messaging = firebase.messaging()
+
+const ICON = self.location.origin + '/Htv-vorstands-app/icon-192.png'
+const APP_URL = 'https://helmstedtertv.github.io/Htv-vorstands-app/'
+
+self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', event => event.waitUntil(self.clients.claim()))
+
+// ── FCM-Hintergrundnachrichten (App geschlossen oder im Hintergrund) ─────────
+// Wir senden vom Worker reine data-Nachrichten, damit wir Titel/Body/Badge
+// selbst steuern können.
+messaging.onBackgroundMessage(payload => {
+  const data  = payload.data || {}
+  const title = data.title || 'HTV Vorstands-App'
+  const body  = data.body  || 'Neue Nachricht'
+  const count = Number(data.count) || 1
+
+  self.registration.showNotification(title, {
+    body,
+    icon: ICON,
+    badge: ICON,
+    tag: 'new-message',
+    renotify: true,
+    vibrate: [100, 50, 100],
+  })
+  self.registration.setAppBadge?.(count).catch(() => {})
 })
 
-// ── Web Push (kommt vom Cloudflare Worker, App komplett geschlossen) ─────────
-self.addEventListener('push', event => {
-  let title = 'HTV Vorstands-App'
-  let body  = 'Neue Nachricht'
-  let count = 1
-  const icon = self.location.origin + '/Htv-vorstands-app/icon-192.png'
-
-  if (event.data) {
-    try {
-      const data = event.data.json()
-      title = data.title || title
-      body  = data.body  || body
-      if (data.count) count = data.count
-    } catch {
-      body = event.data.text() || body
-    }
-  }
-
-  event.waitUntil(
-    Promise.all([
-      self.registration.showNotification(title, {
-        body,
-        icon,
-        badge: icon,
-        tag: 'new-message',
-        renotify: true,
-        vibrate: [100, 50, 100],
-      }),
-      // Icon-Badge auf dem Homescreen setzen (iOS 16.4+ / iPadOS 16.4+)
-      self.registration.setAppBadge?.(count).catch(() => {}),
-    ])
-  )
-})
-
-// ── Nachrichten vom App-Hauptthread ─────────────────────────────────────────
-// Empfängt Nachrichten vom App-Hauptthread
+// ── Nachrichten vom App-Hauptthread (Badge setzen/löschen) ───────────────────
 self.addEventListener('message', event => {
-  // Badge setzen/löschen (App minimiert oder im Hintergrund)
   if (event.data?.type === 'SET_BADGE') {
     const count = event.data.count ?? 0
     if (count > 0) {
@@ -54,24 +54,9 @@ self.addEventListener('message', event => {
       self.registration.clearAppBadge?.()
     }
   }
-
-  // Browser-Benachrichtigung anzeigen
-  if (event.data?.type === 'SHOW_NOTIFICATION') {
-    const { title, body } = event.data
-    event.waitUntil(
-      self.registration.showNotification(title || 'Neue Nachricht', {
-        body: body || '',
-        icon: self.location.origin + '/Htv-vorstands-app/icon-192.png',
-        badge: self.location.origin + '/Htv-vorstands-app/icon-192.png',
-        tag: 'new-message',
-        renotify: true,
-        vibrate: [100, 50, 100],
-      })
-    )
-  }
 })
 
-// Klick auf Benachrichtigung → App in den Vordergrund
+// ── Klick auf Benachrichtigung → App in den Vordergrund, Badge löschen ───────
 self.addEventListener('notificationclick', event => {
   event.notification.close()
   self.registration.clearAppBadge?.().catch(() => {})
@@ -83,7 +68,7 @@ self.addEventListener('notificationclick', event => {
         }
       }
       if (self.clients.openWindow) {
-        return self.clients.openWindow('https://helmstedtertv.github.io/Htv-vorstands-app/')
+        return self.clients.openWindow(APP_URL)
       }
     })
   )
