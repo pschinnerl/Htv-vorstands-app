@@ -27,14 +27,27 @@ self.addEventListener('activate', event => event.waitUntil(self.clients.claim())
 // ── FCM-Hintergrundnachrichten (App geschlossen oder im Hintergrund) ─────────
 // Wir senden vom Worker reine data-Nachrichten, damit wir Titel/Body/Badge
 // selbst steuern können.
-messaging.onBackgroundMessage(payload => {
+messaging.onBackgroundMessage(() => {
   // Die ANZEIGE der Benachrichtigung übernimmt der FCM-Service-Worker bereits
   // automatisch aus dem webpush.notification-Block (siehe Worker). Würden wir
   // hier zusätzlich showNotification aufrufen, erschienen ZWEI Banner.
-  // Deshalb hier nur noch das Icon-Badge setzen (iOS/macOS-PWA).
-  const data  = payload.data || {}
-  const count = Number(data.count) || 1
-  self.navigator.setAppBadge?.(count).catch(() => {})
+  // Das Icon-Badge setzen wir bewusst NICHT hier, sondern im push-Listener
+  // unten – dort können wir per event.waitUntil den Worker am Leben halten,
+  // bis setAppBadge fertig ist (sonst wird er oft vorher beendet → kein Badge).
+})
+
+// ── Icon-Badge bei eingehendem Push (zuverlässig via waitUntil) ──────────────
+self.addEventListener('push', event => {
+  let count = 1
+  try {
+    const payload = event.data ? event.data.json() : {}
+    const c = payload?.data?.count ?? payload?.count
+    if (c != null) count = Number(c) || 1
+  } catch { /* Payload nicht lesbar – Badge dann pauschal auf 1 */ }
+
+  if (self.navigator.setAppBadge) {
+    event.waitUntil(self.navigator.setAppBadge(count).catch(() => {}))
+  }
 })
 
 // ── Nachrichten vom App-Hauptthread (Badge setzen/löschen) ───────────────────
