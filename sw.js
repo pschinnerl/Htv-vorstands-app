@@ -45,9 +45,21 @@ self.addEventListener('push', event => {
     if (c != null) count = Number(c) || 1
   } catch { /* Payload nicht lesbar – Badge dann pauschal auf 1 */ }
 
-  if (self.navigator.setAppBadge) {
-    event.waitUntil(self.navigator.setAppBadge(count).catch(() => {}))
-  }
+  event.waitUntil((async () => {
+    // Diagnose-Beacon: bestätigt im Live-Log, dass der Service Worker beim
+    // Push aufgewacht ist (inkl. Geräte-Kennung über den User-Agent).
+    try {
+      await fetch('https://htv-push-worker.vorstand-htv.workers.dev/ping', {
+        method: 'POST',
+        mode: 'no-cors',
+        body: 'sw-push ' + (self.navigator.userAgent || ''),
+      })
+    } catch { /* egal */ }
+
+    if (self.navigator.setAppBadge) {
+      await self.navigator.setAppBadge(count).catch(() => {})
+    }
+  })())
 })
 
 // ── Nachrichten vom App-Hauptthread (Badge setzen/löschen) ───────────────────
