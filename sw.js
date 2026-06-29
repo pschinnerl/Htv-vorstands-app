@@ -28,19 +28,12 @@ self.addEventListener('activate', event => event.waitUntil(self.clients.claim())
 // Wir senden vom Worker reine data-Nachrichten, damit wir Titel/Body/Badge
 // selbst steuern können.
 messaging.onBackgroundMessage(payload => {
+  // Die ANZEIGE der Benachrichtigung übernimmt der FCM-Service-Worker bereits
+  // automatisch aus dem webpush.notification-Block (siehe Worker). Würden wir
+  // hier zusätzlich showNotification aufrufen, erschienen ZWEI Banner.
+  // Deshalb hier nur noch das Icon-Badge setzen (iOS/macOS-PWA).
   const data  = payload.data || {}
-  const title = data.title || 'HTV Vorstands-App'
-  const body  = data.body  || 'Neue Nachricht'
   const count = Number(data.count) || 1
-
-  self.registration.showNotification(title, {
-    body,
-    icon: ICON,
-    badge: ICON,
-    tag: 'new-message',
-    renotify: true,
-    vibrate: [100, 50, 100],
-  })
   self.registration.setAppBadge?.(count).catch(() => {})
 })
 
