@@ -34,7 +34,7 @@ messaging.onBackgroundMessage(payload => {
   // Deshalb hier nur noch das Icon-Badge setzen (iOS/macOS-PWA).
   const data  = payload.data || {}
   const count = Number(data.count) || 1
-  self.registration.setAppBadge?.(count).catch(() => {})
+  self.navigator.setAppBadge?.(count).catch(() => {})
 })
 
 // ── Nachrichten vom App-Hauptthread (Badge setzen/löschen) ───────────────────
@@ -42,9 +42,9 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SET_BADGE') {
     const count = event.data.count ?? 0
     if (count > 0) {
-      self.registration.setAppBadge?.(count)
+      self.navigator.setAppBadge?.(count)
     } else {
-      self.registration.clearAppBadge?.()
+      self.navigator.clearAppBadge?.()
     }
   }
 })
@@ -52,7 +52,7 @@ self.addEventListener('message', event => {
 // ── Klick auf Benachrichtigung → App in den Vordergrund, Badge löschen ───────
 self.addEventListener('notificationclick', event => {
   event.notification.close()
-  self.registration.clearAppBadge?.().catch(() => {})
+  self.navigator.clearAppBadge?.().catch(() => {})
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
